@@ -1,47 +1,108 @@
-﻿@{
+﻿@model StudentTeacher.Mvc.Models.RegisterViewModel
+@* @model directive tells the Razor view which C# model it uses.
+ *@
+ @{
     Layout = "_Layout";
 }
 
-@model RegisterViewModel
 
+@* The asp-for attributes connect HTML inputs to properties in RegisterViewModel. 
+    When the form is submitted, ASP.NET Core model binding uses the entered values to
+    populate the model in AccountController.
+ *@
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
+        <div class="col-md-6 col-lg-5">
             <div class="card shadow-sm">
                 <div class="card-body p-4">
+
                     <h2 class="card-title text-center mb-4">Register</h2>
 
                     <form asp-action="Register" method="post">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <div asp-validation-summary="ModelOnly"
+                             class="text-danger mb-3"></div>
+@*The asp-validation-for elements display validation errors associated with those properties.*@
 
                         <div class="mb-3">
-                            <label asp-for="Email" class="form-label">Email</label>
-                            <input asp-for="Email" class="form-control" placeholder="you@example.com" />
-                            <span asp-validation-for="Email" class="text-danger small"></span>
+                            <label asp-for="FirstName" class="form-label"></label>
+                            <input asp-for="FirstName" class="form-control" />
+                            <span asp-validation-for="FirstName"
+                                  class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Password" class="form-label">Password</label>
-                            <input asp-for="Password" type="password" class="form-control" placeholder="Choose a strong password" />
-                            <span asp-validation-for="Password" class="text-danger small"></span>
+                            <label asp-for="LastName" class="form-label"></label>
+                            <input asp-for="LastName" class="form-control" />
+                            <span asp-validation-for="LastName"
+                                  class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Role" class="form-label">Role</label>
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control"
+                                   placeholder="you@example.com" />
+                            <span asp-validation-for="Email"
+                                  class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" type="password"
+                                   class="form-control"
+                                   placeholder="Choose a strong password" />
+                            <span asp-validation-for="Password"
+                                  class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Role" class="form-label"></label>
                             <select asp-for="Role" class="form-select">
                                 <option value="Student">Student</option>
                                 <option value="Teacher">Teacher</option>
                             </select>
-                            <span asp-validation-for="Role" class="text-danger small"></span>
+                            <span asp-validation-for="Role"
+                                  class="text-danger small"></span>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">Register</button>
+                        <div class="mb-3">
+                            <label asp-for="StudentNumber" class="form-label"></label>
+                            <input asp-for="StudentNumber"
+                                   class="form-control" />
+                            <span class="text-muted small">
+                                Complete this if registering as a Student.
+                            </span>
+                            <span asp-validation-for="StudentNumber"
+                                  class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="EmployeeNumber" class="form-label"></label>
+                            <input asp-for="EmployeeNumber"
+                                   class="form-control" />
+                            <span class="text-muted small">
+                                Complete this if registering as a Teacher.
+                            </span>
+                            <span asp-validation-for="EmployeeNumber"
+                                  class="text-danger small"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            Register
+                        </button>
+
                     </form>
 
                     <div class="text-center mt-3">
-                        <span class="small text-muted">Already have an account?</span>
-                        <a asp-action="Login" class="text-decoration-none small">Login</a>
+                        <span class="small text-muted">
+                            Already have an account?
+                        </span>
+                        <a asp-action="Login"
+                           class="text-decoration-none small">
+                            Login
+                        </a>
                     </div>
+
                 </div>
             </div>
         </div>

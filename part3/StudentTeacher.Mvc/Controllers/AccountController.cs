@@ -17,13 +17,21 @@ public class AccountController : Controller
     [HttpGet]//allows you to see the view 
     public IActionResult Register() => View();
 
-    [HttpPost] 
+    [HttpPost]
+    [ValidateAntiForgeryToken]//protects the form against cross-site request forgery.
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
+        //Check that the form passes MVC validation.
+        if (!ModelState.IsValid) //checks the MVC form's validation rules before contacting the API.
+        {
+            return View(model);
+        }
+
         //Create a client instance 
         var client = _clientFactory.CreateClient();
         client.BaseAddress = new Uri("https://localhost:7261/");//localhost of YOUR API
 
+        //Convert the registration model into JSON.
         var json = JsonConvert.SerializeObject(model);//serialize the user input to send to API
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -36,7 +44,8 @@ public class AccountController : Controller
             return RedirectToAction("Login");
         }
 
-        ModelState.AddModelError("", "Registration failed");
+        ModelState.AddModelError("", $"Registration failed. API returned {(int)response.StatusCode}.");
+
         return View(model);
     }
 
