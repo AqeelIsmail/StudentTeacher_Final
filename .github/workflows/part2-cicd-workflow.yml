@@ -1,0 +1,25 @@
+
+name: Part 2 - Build and Test
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Install .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build the API
+        run: dotnet build part2/Authentication_API.slnx
+
+      - name: Run the tests
+        run: dotnet test part2/Authentication_API.Tests/Authentication_API.Tests.csproj

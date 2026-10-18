@@ -1,0 +1,17 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+
+# Build files
+**/bin/
+**/obj/
+
+# Test results
+TestResults/
+*.trx
+
+# Local secrets
+.env
+.env.*
+appsettings.Development.json

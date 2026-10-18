@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Authentication_API.Tests/Authentication_API.Tests.csproj" Id="3af43767-dbad-4c3c-b4d4-9c7a049f8946" />
+  <Project Path="Authentication_API/Authentication_API.csproj" />
+</Solution>

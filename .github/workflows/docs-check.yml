@@ -1,0 +1,27 @@
+name: Documentation Check
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check required files
+        shell: bash
+        run: |
+          echo "Checking submission..."
+
+          test -d docs
+          test -f README.md
+          test -f docs/ERD.png
+          test -f docs/StudentTeacher.sql
+          test -f docs/API_Endpoint_Plan.pdf
+
+          echo "All required files are present."
