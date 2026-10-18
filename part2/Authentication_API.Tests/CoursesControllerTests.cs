@@ -1,4 +1,6 @@
 ﻿using Authentication_API.Controllers;
+using Authentication_API.DTOs;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
