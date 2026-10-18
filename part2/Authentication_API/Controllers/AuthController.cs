@@ -184,8 +184,21 @@ public class AuthController : Controller
 
         return Ok("Logged in");
     }
-
+    /// <summary>
+    /// Logs out the current user by clearing the API authentication cookie.
+    /// </summary>
+    /// <remarks>
+    /// Signs the user out of cookie authentication.
+    /// The response instructs the client to remove its authentication cookie.
+    /// </remarks>
+    /// <returns>
+    /// HTTP 200 OK when the sign-out operation is completed.
+    /// </returns>
+    /// <response code="200">
+    /// The user has been signed out successfully.
+    /// </response>
     [HttpPost("logout")] //clears the users cookie
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
