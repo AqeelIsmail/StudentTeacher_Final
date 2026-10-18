@@ -103,9 +103,54 @@ public class AccountController : Controller
     }
 
 
+
+    [HttpPost] //means logout must be submitted using an HTTP POST request.
+    [ValidateAntiForgeryToken]//helps protect against unwanted form submissions.
     public async Task<IActionResult> Logout()
     {
+        // Retrieve the API authentication cookie from MVC session.
+        var authCookie = HttpContext.Session.GetString("ApiAuthCookie");
+        //Session.GetString() retrieves the cookie saved when the user logged in.
+        if (!string.IsNullOrEmpty(authCookie))
+        {
+            // Use the named HttpClient configured in Program.cs.
+            var client = _clientFactory.CreateClient("StudentTeacherApi");
+            client.BaseAddress = new Uri("https://localhost:7261/");
+
+            // Send the current user's authentication cookie to the API.
+            using var request = new HttpRequestMessage( 
+                //HttpRequestMessage allows us to construct the API request and attach its cookie.
+                HttpMethod.Post,
+                "api/auth/logout");
+
+            request.Headers.TryAddWithoutValidation("Cookie", authCookie);
+
+            try
+            {
+                // Call the API logout endpoint.
+                using var response = await client.SendAsync(request);
+                //SendAsync() sends the logout request asynchronously.
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    // The API did not complete the logout successfully.
+                    // MVC will still clear its own session below.
+                }
+            }
+            catch (HttpRequestException)
+            {
+                // The API may be temporarily unavailable.
+                // MVC still needs to clear its own session.
+            }
+        }
+
+        // Remove the authentication state stored by MVC.
         HttpContext.Session.Remove("ApiAuthCookie");
+        //Session.Remove() ensures MVC stops using the authentication cookie,
+        //even if the API cannot be reached.
+
+        // Return to the login page.
         return RedirectToAction("Login");
     }
+
 }

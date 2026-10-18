@@ -21,7 +21,7 @@ namespace StudentTeacher.Mvc.Controllers
         //Understand this through the slide: Go to slide 6 in the ppt called 'cookies'
         public async Task<IActionResult> TeacherArea()
         {
-            var client = _clientFactory.CreateClient();
+            var client = _clientFactory.CreateClient("StudentTeacherApi");
             client.BaseAddress = new Uri("https://localhost:7261/");
 
             //Finds the session that was named at login 'ApiAuthCooki' (finds the drawer with the label)
@@ -51,7 +51,7 @@ namespace StudentTeacher.Mvc.Controllers
 
         public async Task<IActionResult> StudentArea()
         {
-            var client = _clientFactory.CreateClient();
+            var client = _clientFactory.CreateClient("StudentTeacherApi");
             client.BaseAddress = new Uri("https://localhost:7261/");
 
             var authCookie = HttpContext.Session.GetString("ApiAuthCookie");

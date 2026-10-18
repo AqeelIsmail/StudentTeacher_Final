@@ -13,9 +13,17 @@
                 <h2 class="mb-1">Teacher Area</h2>
                 <p class="mb-0">Welcome, @Model</p>
             </div>
-            <a asp-controller="Account" asp-action="Logout" class="btn btn-light">
-                Logout
-            </a>
+
+            <form asp-controller="Account"
+                  asp-action="Logout"
+                  method="post">
+
+                <button type="submit" class="btn btn-danger">
+                    Logout
+                </button>
+
+            </form>
+
         </div>
     </div>
 </div>
