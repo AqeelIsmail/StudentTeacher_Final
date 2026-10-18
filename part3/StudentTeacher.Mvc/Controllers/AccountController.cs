@@ -14,6 +14,12 @@ public class AccountController : Controller
         _clientFactory = clientFactory;
     }
 
+    [HttpGet]
+    public IActionResult Index()
+    {
+        return RedirectToAction("Login");
+    }
+
     [HttpGet]//allows you to see the view 
     public IActionResult Register() => View();
 
