@@ -57,7 +57,7 @@ public class AccountController : Controller
     public async Task<IActionResult> Login(LoginViewModel model)
     {
         /* MVC server sends a request to the API server */
-        var client = _clientFactory.CreateClient();
+        var client = _clientFactory.CreateClient("StudentTeacherApi");
         client.BaseAddress = new Uri("https://localhost:7261/");
 
         var json = JsonConvert.SerializeObject(model);
@@ -71,17 +71,32 @@ public class AccountController : Controller
         //MVC server reads that cookie issued by the API server 
         if (response.IsSuccessStatusCode)
         {
-             /* Reaches into the API's response and pulls out that cookie string
-             as plain text, so the MVC server can store it in the drawer (server memory).*/
-            var cookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault();//Set-Cookie was the keyword set by the API when cookies created
+            // Read the Set-Cookie header returned by the API.
+            if (!response.Headers.TryGetValues("Set-Cookie", out var cookieHeaders))
+            {
+                ModelState.AddModelError("", "No authentication cookie was returned.");
+                return View(model);
+            }
 
-            /* it generates the random Session ID label (8f3a2b91-xyz)
-             * creates the drawer
-             * puts cookie's value into that drawer, labeled "ApiAuthCookie"*/
-            HttpContext.Session.SetString("ApiAuthCookie", cookie);
+            // Find the API authentication cookie.
+            var setCookie = cookieHeaders.FirstOrDefault(
+                c => c.StartsWith(".AspNetCore.Cookies=", StringComparison.Ordinal));
 
-            return RedirectToAction("Index", "Home"); //browser gets the drawer label
+            if (setCookie == null)
+            {
+                ModelState.AddModelError("", "Authentication cookie was not found.");
+                return View(model);
+            }
+
+            // Keep only the cookie name and value.
+            var authCookie = setCookie.Split(';', 2)[0];
+
+            // Store it in this user's MVC session.
+            HttpContext.Session.SetString("ApiAuthCookie", authCookie);
+
+            return RedirectToAction("Index", "Home");
         }
+
 
         ModelState.AddModelError("", "Invalid login");
         return View(model);
