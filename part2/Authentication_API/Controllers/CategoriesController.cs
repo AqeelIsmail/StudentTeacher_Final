@@ -1,6 +1,7 @@
 ﻿
 using Authentication_API;
 using Authentication_API.Models;
+using Authentication_API.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +23,16 @@ namespace Authentication_API.Controllers
 
         // GET: api/categories
         // Both Students and Teachers can view course categories
+        /// <summary>
+        /// Lists available course categories.
+        /// </summary>
+        /// <remarks>
+        /// Public endpoint for displaying categories in the MVC interface.
+        /// </remarks>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="200">Category list returned.</response>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetCategories()
         {
             var categories = await _context.CourseCategories
@@ -40,8 +50,26 @@ namespace Authentication_API.Controllers
 
         // POST: api/categories
         // Only Teachers can create course categories
+        /// <summary>
+        /// Creates a course category.
+        /// </summary>
+        /// <remarks>
+        /// Teacher role required; duplicate category names are rejected.
+        /// </remarks>
+        /// <param name="dto">Category name and optional description.</param>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="201">Category created.</response>
+        /// <response code="400">Invalid category data.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Teacher role required.</response>
+        /// <response code="409">Category name already exists.</response>
         [HttpPost]
         [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> CreateCategory(
             CourseCategoryDto dto)
         {
@@ -79,8 +107,29 @@ namespace Authentication_API.Controllers
 
         // PUT: api/categories/{id}
         // Only Teachers can update course categories
+        /// <summary>
+        /// Updates an existing course category.
+        /// </summary>
+        /// <remarks>
+        /// Teacher role required; category names must remain unique.
+        /// </remarks>
+        /// <param name="id">Category identifier.</param>
+        /// <param name="dto">Updated category name and description.</param>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="200">Updated category returned.</response>
+        /// <response code="400">Invalid category data.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Teacher role required.</response>
+        /// <response code="404">Category not found.</response>
+        /// <response code="409">Another category already has this name.</response>
         [HttpPut("{id}")]
         [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> UpdateCategory(
             int id,
             CourseCategoryDto dto)
@@ -122,8 +171,26 @@ namespace Authentication_API.Controllers
 
         // DELETE: api/categories/{id}
         // Only Teachers can delete course categories
+        /// <summary>
+        /// Deletes an unused course category.
+        /// </summary>
+        /// <remarks>
+        /// Teacher role required; categories linked to courses cannot be deleted.
+        /// </remarks>
+        /// <param name="id">Category identifier.</param>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="204">Category deleted.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Teacher role required.</response>
+        /// <response code="404">Category not found.</response>
+        /// <response code="409">Category has linked courses.</response>
         [HttpDelete("{id}")]
         [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> DeleteCategory(int id)
         {
             // Find the category
@@ -155,14 +222,14 @@ namespace Authentication_API.Controllers
         }
     }
 
-    // DTO used for creating and updating course categories
-    public class CourseCategoryDto
-    {
-        [Required]
-        [MaxLength(100)]
-        public string Name { get; set; } = null!;
+    //// DTO used for creating and updating course categories
+    //public class CourseCategoryDto
+    //{
+    //    [Required]
+    //    [MaxLength(100)]
+    //    public string Name { get; set; } = null!;
 
-        [MaxLength(500)]
-        public string? Description { get; set; }
-    }
+    //    [MaxLength(500)]
+    //    public string? Description { get; set; }
+    //}
 }

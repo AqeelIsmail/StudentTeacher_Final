@@ -1,4 +1,4 @@
-﻿using Authentication_API;
+﻿using Authentication_API.DTOs;
 using Authentication_API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -60,8 +60,23 @@ namespace Authentication_API.Controllers
         }
 
         // GET: api/courses/my - courses belonging to the signed-in Teacher
+        /// <summary>
+        /// Lists courses created by the signed-in Teacher.
+        /// </summary>
+        /// <remarks>
+        /// Teacher role required; courses are filtered by the current Teacher profile.
+        /// </remarks>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="200">Teacher course list returned.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Teacher role required.</response>
+        /// <response code="404">Teacher profile not found.</response>
         [HttpGet("my")]
         [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetMyCourses()
         {
             int? teacherId = await GetCurrentTeacherProfileId();
@@ -135,8 +150,28 @@ namespace Authentication_API.Controllers
         }
 
         // POST: api/courses - Teacher creates a course assigned to own profile
+        /// <summary>
+        /// Creates a course for the signed-in Teacher.
+        /// </summary>
+        /// <remarks>
+        /// Teacher role required. The supplied category must exist and the course code must be unique.
+        /// </remarks>
+        /// <param name="dto">Course code, title, description and category identifier.</param>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="201">Course created.</response>
+        /// <response code="400">Invalid course data or category.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Teacher role required.</response>
+        /// <response code="404">Teacher profile not found.</response>
+        /// <response code="409">Course code already exists.</response>
         [HttpPost]
         [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> CreateCourse(CourseDto dto)
         {
             int? teacherId = await GetCurrentTeacherProfileId();
@@ -176,8 +211,29 @@ namespace Authentication_API.Controllers
         }
 
         // PUT: api/courses/5 - only the Teacher who owns the course
+        /// <summary>
+        /// Updates a course owned by the signed-in Teacher.
+        /// </summary>
+        /// <remarks>
+        /// Rejects changes by a different Teacher, missing categories, and duplicate course codes.
+        /// </remarks>
+        /// <param name="id">Course identifier.</param>
+        /// <param name="dto">Updated course fields.</param>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="200">Updated course returned.</response>
+        /// <response code="400">Invalid course data or category.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Not the owning Teacher or wrong role.</response>
+        /// <response code="404">Course not found.</response>
+        /// <response code="409">Course code already exists.</response>
         [HttpPut("{id:int}")]
         [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> UpdateCourse(int id, CourseDto dto)
         {
             var course = await _context.Courses.FindAsync(id);
@@ -215,8 +271,26 @@ namespace Authentication_API.Controllers
         }
 
         // DELETE: api/courses/5 - only owner, only without enrolments
+        /// <summary>
+        /// Deletes a course owned by the signed-in Teacher.
+        /// </summary>
+        /// <remarks>
+        /// Deletion is blocked when the course already has enrolments.
+        /// </remarks>
+        /// <param name="id">Course identifier.</param>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="204">Course deleted.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Not the owning Teacher or wrong role.</response>
+        /// <response code="404">Course not found.</response>
+        /// <response code="409">Course has enrolments.</response>
         [HttpDelete("{id:int}")]
         [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> DeleteCourse(int id)
         {
             var course = await _context.Courses.FindAsync(id);
@@ -248,20 +322,20 @@ namespace Authentication_API.Controllers
         }
     }
 
-    public class CourseDto
-    {
-        [Range(1, int.MaxValue)]
-        public int CourseCategoryId { get; set; }
+    //public class CourseDto
+    //{
+    //    [Range(1, int.MaxValue)]
+    //    public int CourseCategoryId { get; set; }
 
-        [Required]
-        [MaxLength(30)]
-        public string Code { get; set; } = null!;
+    //    [Required]
+    //    [MaxLength(30)]
+    //    public string Code { get; set; } = null!;
 
-        [Required]
-        [MaxLength(150)]
-        public string Title { get; set; } = null!;
+    //    [Required]
+    //    [MaxLength(150)]
+    //    public string Title { get; set; } = null!;
 
-        [MaxLength(1000)]
-        public string? Description { get; set; }
-    }
+    //    [MaxLength(1000)]
+    //    public string? Description { get; set; }
+    //}
 }

@@ -1,5 +1,6 @@
 ﻿using Authentication_API;
 using Authentication_API.Models;
+using Authentication_API.DTOs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -26,7 +27,21 @@ public class AuthController : Controller
     }
 
     // REGISTER: Creates a user and their Student or Teacher profile
+    /// <summary>
+    /// Registers a Student or Teacher account and creates the linked profile.
+    /// </summary>
+    /// <remarks>
+    /// Public registration. Passwords are hashed; duplicate email or role-specific numbers are rejected.
+    /// </remarks>
+    /// <param name="dto">Registration details, including the role and corresponding student or employee number.</param>
+    /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+    /// <response code="201">Account and profile created.</response>
+    /// <response code="400">Invalid registration fields, role or missing role-specific identifier.</response>
+    /// <response code="409">Email or role-specific identifier already exists.</response>
     [HttpPost("register")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register(RegisterDto dto)
     {
         // STEP 1: Check that the role is valid
@@ -117,7 +132,21 @@ public class AuthController : Controller
      * Runs when the client sends a request to this endpoint 
      * This endpoint checks if the password sent is correct and creates a cookie on line 68
      *  */
+    /// <summary>
+    /// Authenticates an existing Student or Teacher using a password.
+    /// </summary>
+    /// <remarks>
+    /// On success, the API issues its cookie-authentication ticket through SignInAsync.
+    /// </remarks>
+    /// <param name="dto">Email address and password.</param>
+    /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+    /// <response code="200">Credentials accepted and sign-in requested.</response>
+    /// <response code="400">Invalid request body or missing fields.</response>
+    /// <response code="401">Email or password is incorrect.</response>
     [HttpPost("login")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(LoginDto dto)
     {
         //looks up the user by email. If nobody has the email return 401 status code
@@ -164,8 +193,23 @@ public class AuthController : Controller
     }
 
     // GET /api/auth/profile - signed-in Student or Teacher views their own profile.
+    /// <summary>
+    /// Retrieves the signed-in user and their Student or Teacher profile.
+    /// </summary>
+    /// <remarks>
+    /// Requires API cookie authentication and uses the authenticated user identifier.
+    /// </remarks>
+    /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+    /// <response code="200">User and matching profile returned.</response>
+    /// <response code="401">Authentication or user record missing.</response>
+    /// <response code="403">User role is unsupported.</response>
+    /// <response code="404">Matching Student or Teacher profile not found.</response>
     [HttpGet("profile")]
     [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfile()
     {
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
@@ -210,8 +254,26 @@ public class AuthController : Controller
     }
 
     // PUT /api/auth/profile - update only first and last name on own profile.
+    /// <summary>
+    /// Updates the signed-in Student or Teacher profile name.
+    /// </summary>
+    /// <remarks>
+    /// Only the authenticated user's own first and last names are updated.
+    /// </remarks>
+    /// <param name="dto">New first and last names.</param>
+    /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+    /// <response code="200">Updated profile returned.</response>
+    /// <response code="400">Invalid profile data.</response>
+    /// <response code="401">Authentication or user record missing.</response>
+    /// <response code="403">User role is unsupported.</response>
+    /// <response code="404">Matching Student or Teacher profile not found.</response>
     [HttpPut("profile")]
     [Authorize]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
     {
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
@@ -271,14 +333,14 @@ public class AuthController : Controller
         return Forbid();
     }
 }
-// Request body for PUT /api/auth/profile. Matches the approved endpoint plan.
-public class UpdateProfileDto
-{
-    [Required]
-    [MaxLength(100)]
-    public string FirstName { get; set; } = null!;
+//// Request body for PUT /api/auth/profile. Matches the approved endpoint plan.
+//public class UpdateProfileDto
+//{
+//    [Required]
+//    [MaxLength(100)]
+//    public string FirstName { get; set; } = null!;
 
-    [Required]
-    [MaxLength(100)]
-    public string LastName { get; set; } = null!;
-}
+//    [Required]
+//    [MaxLength(100)]
+//    public string LastName { get; set; } = null!;
+//}

@@ -1,4 +1,4 @@
-using Authentication_API;
+using Authentication_API.DTOs;
 using Authentication_API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,8 +17,29 @@ namespace Authentication_API.Controllers
         public ResultsController(AppDbContext context) => _context = context;
 
         // POST /api/enrolments/{id}/result - owning Teacher records a confirmed enrolment's mark.
+        /// <summary>
+        /// Records a mark and outcome for an enrolment.
+        /// </summary>
+        /// <remarks>
+        /// Teacher must own the course; enrolment must be Confirmed and have no existing result. Outcome is calculated from the mark.
+        /// </remarks>
+        /// <param name="id">Enrolment identifier.</param>
+        /// <param name="dto">Final mark between 0 and 100.</param>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="201">Result recorded.</response>
+        /// <response code="400">Invalid mark or enrolment not confirmed.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Not the owning Teacher or wrong role.</response>
+        /// <response code="404">Enrolment not found.</response>
+        /// <response code="409">Result already exists.</response>
         [HttpPost("/api/enrolments/{id:int}/result")]
         [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> RecordResult(int id, [FromBody] CourseResultDto dto)
         {
             var enrolment = await _context.Enrolments.AsNoTracking()
@@ -52,8 +73,23 @@ namespace Authentication_API.Controllers
         }
 
         // GET /api/results/my - Student's own results.
+        /// <summary>
+        /// Lists course results for the signed-in Student.
+        /// </summary>
+        /// <remarks>
+        /// Only results linked to the current Student profile are returned.
+        /// </remarks>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="200">Student results returned.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Student role required.</response>
+        /// <response code="404">Student profile not found.</response>
         [HttpGet("my")]
         [Authorize(Roles = "Student")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetMyResults()
         {
             int? studentId = await CurrentStudentProfileId();
@@ -72,8 +108,24 @@ namespace Authentication_API.Controllers
         }
 
         // GET /api/courses/{id}/results - owning Teacher views course results.
+        /// <summary>
+        /// Lists results for a course owned by the signed-in Teacher.
+        /// </summary>
+        /// <remarks>
+        /// Teacher role required and course ownership is checked.
+        /// </remarks>
+        /// <param name="id">Course identifier.</param>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="200">Course results returned.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Not the owning Teacher or wrong role.</response>
+        /// <response code="404">Course not found.</response>
         [HttpGet("/api/courses/{id:int}/results")]
         [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCourseResults(int id)
         {
             var course = await _context.Courses.AsNoTracking()
@@ -98,8 +150,27 @@ namespace Authentication_API.Controllers
         }
 
         // PUT /api/results/{id} - owning Teacher corrects mark and outcome.
+        /// <summary>
+        /// Corrects a recorded result belonging to the signed-in Teacher's course.
+        /// </summary>
+        /// <remarks>
+        /// Recalculates Pass or Fail based on the updated mark.
+        /// </remarks>
+        /// <param name="id">Result identifier.</param>
+        /// <param name="dto">Corrected final mark between 0 and 100.</param>
+        /// <returns>An HTTP response indicating the outcome of the operation.</returns>
+        /// <response code="200">Corrected result returned.</response>
+        /// <response code="400">Invalid mark.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Not the owning Teacher or wrong role.</response>
+        /// <response code="404">Result not found.</response>
         [HttpPut("{id:int}")]
         [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateResult(int id, [FromBody] CourseResultDto dto)
         {
             var result = await _context.CourseResults
@@ -140,9 +211,9 @@ namespace Authentication_API.Controllers
         }
     }
 
-    public class CourseResultDto
-    {
-        [Range(typeof(decimal), "0", "100")]
-        public decimal FinalMark { get; set; }
-    }
+    //public class CourseResultDto
+    //{
+    //    [Range(typeof(decimal), "0", "100")]
+    //    public decimal FinalMark { get; set; }
+    //}
 }
