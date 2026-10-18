@@ -1,4 +1,3 @@
-
 name: Part 2 - Build and Test
 
 on:
@@ -19,7 +18,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Build the API and Tests
-        run: dotnet build part2/Authentication_API.slnx
+        run: dotnet build part2/Authentication_API.slnx -p:NoWarn=1591 ###suppresses the specific XML documentation warning during the CI build. Other compiler warnings and actual errors remain visible.
 
       - name: Run the tests
-        run: dotnet test part2/Authentication_API.Tests/Authentication_API.Tests.csproj
+        run: dotnet test part2/Authentication_API.Tests/Authentication_API.Tests.csproj --no-build ###prevents the test step from compiling the same code again, since the preceding step already built the API and tests.
