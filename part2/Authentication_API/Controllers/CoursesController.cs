@@ -479,8 +479,13 @@ namespace Authentication_API.Controllers
             await _context.SaveChangesAsync();
 
             // Delete the actual image from Blob Storage.
+
+            string containerName =
+                _configuration["AzureStorage:CourseImagesContainer"]!;
+
             await _blobStorageService.DeleteImageAsync(
-                oldImageUrl, "course-images");
+                oldImageUrl, containerName);
+
 
             return NoContent();
         }
