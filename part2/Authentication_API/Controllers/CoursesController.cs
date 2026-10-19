@@ -24,8 +24,8 @@ namespace Authentication_API.Controllers
         /// Retrieves all available courses.
         /// </summary>
         /// <remarks>
-        /// This endpoint can be accessed by authenticated
-        /// Students and Teachers.
+        /// Public endpoint. Visitors, Students and Teachers can
+        /// browse available courses without requiring authentication.
         /// </remarks>
         /// <returns>
         /// A list of available courses.
@@ -33,10 +33,6 @@ namespace Authentication_API.Controllers
         /// <response code="200">
         /// Courses retrieved successfully.
         /// </response>
-        /// <remarks>
-        /// Public endpoint. Visitors, Students and Teachers can
-        /// browse available courses without requiring authentication.
-        /// </remarks>
         [HttpGet]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -104,10 +100,6 @@ namespace Authentication_API.Controllers
         /// <summary>
         /// Retrieves a specific course by its ID.
         /// </summary>
-        /// <remarks>
-        /// This endpoint can be accessed by authenticated
-        /// Students and Teachers.
-        /// </remarks>
         /// <param name="id">
         /// The unique ID of the course to retrieve.
         /// </param>
