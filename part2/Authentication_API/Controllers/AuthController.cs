@@ -1,4 +1,4 @@
-﻿using Authentication_API;
+using Authentication_API;
 using Authentication_API.Models;
 using Authentication_API.DTOs;
 using Microsoft.AspNetCore.Authentication;
@@ -346,6 +346,91 @@ public class AuthController : Controller
             });
         }
         return Forbid();
+    }
+
+    // POST /api/auth/profile/image - uploads or replaces the signed-in user's picture.
+    /// <summary>
+    /// Uploads or replaces the logged-in Student or Teacher profile picture.
+    /// </summary>
+    /// <remarks>
+    /// The image is stored in Blob Storage and its URL is saved in SQL Server.
+    /// </remarks>
+    /// <param name="image">A JPG or PNG image, up to 5 MB.</param>
+    /// <returns>The URL of the uploaded profile picture.</returns>
+    /// <response code="200">Image uploaded successfully.</response>
+    /// <response code="400">Invalid image file.</response>
+    /// <response code="401">Authentication required.</response>
+    /// <response code="404">Profile not found.</response>
+    [HttpPost("profile/image")]
+    [Authorize]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UploadProfileImage(
+        [FromForm] IFormFile image,
+        [FromServices] Authentication_API.Services.BlobStorageService blobStorage,
+        [FromServices] IConfiguration configuration)
+    {
+        // Identify the user from the API authentication cookie.
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
+            return Unauthorized();
+
+        // Validate the image in the same way as the course-image endpoint.
+        if (image == null || image.Length == 0)
+            return BadRequest("Please select an image.");
+        if (image.Length > 5 * 1024 * 1024)
+            return BadRequest("Image must be smaller than 5 MB.");
+
+        string extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+        bool validImage =
+            ((extension == ".jpg" || extension == ".jpeg") && image.ContentType == "image/jpeg")
+            || (extension == ".png" && image.ContentType == "image/png");
+        if (!validImage)
+            return BadRequest("Only JPG and PNG images are allowed.");
+
+        // Both roles have a profile image field in the existing database.
+        string? oldImageUrl;
+        Authentication_API.Models.StudentProfile? student = null;
+        Authentication_API.Models.TeacherProfile? teacher = null;
+        string? role = User.FindFirstValue(ClaimTypes.Role);
+        if (role == "Student")
+        {
+            student = await _context.StudentProfiles
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+            if (student == null) return NotFound("Student profile not found.");
+            oldImageUrl = student.ProfileImageUrl;
+        }
+        else if (role == "Teacher")
+        {
+            teacher = await _context.TeacherProfiles
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+            if (teacher == null) return NotFound("Teacher profile not found.");
+            oldImageUrl = teacher.ProfileImageUrl;
+        }
+        else
+        {
+            return Forbid();
+        }
+
+        string containerName = configuration["AzureStorage:ProfileImagesContainer"]
+            ?? throw new InvalidOperationException("Profile image container is not configured.");
+
+        // Upload first so that the previous image remains if the upload fails.
+        string imageUrl = await blobStorage.UploadImageAsync(image, containerName);
+        if (student != null)
+            student.ProfileImageUrl = imageUrl;
+        else
+            teacher!.ProfileImageUrl = imageUrl;
+
+        await _context.SaveChangesAsync();
+
+        // Clean up the old blob when the database now points to the new one.
+        if (!string.IsNullOrWhiteSpace(oldImageUrl))
+            await blobStorage.DeleteImageAsync(oldImageUrl, containerName);
+
+        return Ok(new { imageUrl });
     }
 }
 //// Request body for PUT /api/auth/profile. Matches the approved endpoint plan.
