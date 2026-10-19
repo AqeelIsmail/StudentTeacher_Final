@@ -8,13 +8,20 @@ namespace Authentication_API.Services
     {
         private readonly BlobServiceClient _blobServiceClient;
 
+
         public BlobStorageService(IConfiguration configuration)
         {
-            // Read the Azurite connection string from configuration.
+            // Read the Azurite connection string.
             string connectionString =
                 configuration["AzureStorage:ConnectionString"]!;
 
-            _blobServiceClient = new BlobServiceClient(connectionString);
+            // Use an Azure Storage API version supported by our local Azurite.
+            var options = new BlobClientOptions(
+                BlobClientOptions.ServiceVersion.V2023_11_03);
+
+            // Create the Blob Storage client.
+            _blobServiceClient = new BlobServiceClient(
+                connectionString, options);
         }
 
         public async Task<string> UploadImageAsync(
@@ -40,11 +47,14 @@ namespace Authentication_API.Services
             using var stream = image.OpenReadStream();
 
             await blob.UploadAsync(
-                stream,
-                new BlobHttpHeaders
-                {
-                    ContentType = image.ContentType
-                });
+    stream,
+    new BlobUploadOptions
+    {
+        HttpHeaders = new BlobHttpHeaders
+        {
+            ContentType = image.ContentType
+        }
+    });
 
             // Return the image URL for saving in SQL Server.
             return blob.Uri.ToString();
