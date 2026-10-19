@@ -59,5 +59,41 @@ namespace Authentication_API.Services
             // Return the image URL for saving in SQL Server.
             return blob.Uri.ToString();
         }
+
+
+
+        public async Task DeleteImageAsync(
+            string imageUrl,
+            string containerName)
+        {
+            // Get the container containing the image.
+            var container = _blobServiceClient
+                .GetBlobContainerClient(containerName);
+
+            // Check that the URL belongs to this container.
+            string containerUrl =
+                container.Uri.AbsoluteUri.TrimEnd('/') + "/";
+
+            var imageUri = new Uri(imageUrl);
+
+            if (!imageUri.AbsoluteUri.StartsWith(
+                containerUrl,
+                StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Image does not belong to this container.");
+            }
+
+            // Extract the image filename from the URL.
+            string fileName = Uri.UnescapeDataString(
+                imageUri.Segments[^1]);
+
+            // Get the existing blob.
+            var blob = container.GetBlobClient(fileName);
+
+            // Delete the blob if it exists.
+            await blob.DeleteIfExistsAsync();
+        }
+
     }
 }

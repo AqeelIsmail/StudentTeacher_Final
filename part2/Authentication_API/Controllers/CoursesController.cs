@@ -394,22 +394,87 @@ namespace Authentication_API.Controllers
             if (!validType)
                 return BadRequest("Invalid image content type.");
 
+
             // 6. Read the container name from configuration.
             string containerName =
                 _configuration["AzureStorage:CourseImagesContainer"]!;
 
-            // 7. Upload the file to Azurite.
-            string imageUrl = await _blobStorageService.UploadImageAsync(
-                image, containerName);
+            // 7. Remember the existing image URL (if any).
+            string? oldImageUrl = course.CourseImageUrl;
 
-            // 8. Save the returned URL to SQL Server.
-            course.CourseImageUrl = imageUrl;
+            // 8. Upload the new image to Azurite.
+            string newImageUrl =
+                await _blobStorageService.UploadImageAsync(
+                    image, containerName);
+
+            // 9. Update the course's image URL.
+            course.CourseImageUrl = newImageUrl;
+
+            // 10. Save the new URL to SQL Server.
+            await _context.SaveChangesAsync();
+
+            // 11. Delete the previous image if one existed.
+            if (!string.IsNullOrWhiteSpace(oldImageUrl))
+            {
+                await _blobStorageService.DeleteImageAsync(
+                    oldImageUrl, containerName);
+            }
+
+            // 12. Return the new image URL.
+            return Ok(new { imageUrl = newImageUrl });
+        }
+
+
+        /// <summary>
+        /// Removes an image from a course owned by the signed-in Teacher.
+        /// </summary>
+        /// <param name="id">The course ID.</param>
+        /// <response code="204">Course image removed.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Teacher does not own the course.</response>
+        /// <response code="404">Course not found.</response>
+        [HttpDelete("{id:int}/image")]
+        [Authorize(Roles = "Teacher")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteCourseImage(int id)
+        {
+            // Find the course.
+            var course = await _context.Courses.FindAsync(id);
+
+            if (course == null)
+                return NotFound("Course not found.");
+
+            // Check course ownership.
+            int? teacherId = await GetCurrentTeacherProfileId();
+
+            if (teacherId == null ||
+                course.TeacherProfileId != teacherId.Value)
+            {
+                return Forbid();
+            }
+
+            // Nothing to remove.
+            if (string.IsNullOrWhiteSpace(course.CourseImageUrl))
+                return NoContent();
+
+            // Remember the image URL.
+            string oldImageUrl = course.CourseImageUrl;
+
+            // Remove the URL from the database.
+            course.CourseImageUrl = null;
 
             await _context.SaveChangesAsync();
 
-            // 9. Return the image URL to the client.
-            return Ok(new { imageUrl });
+            // Delete the actual image from Blob Storage.
+            await _blobStorageService.DeleteImageAsync(
+                oldImageUrl, "course-images");
+
+            return NoContent();
         }
+
 
     }
 
