@@ -1,0 +1,70 @@
+﻿@model StudentTeacher.Mvc.Models.CreateCourseViewModel
+
+@{
+    ViewData["Title"] = "Create Course";
+}
+
+<div class="container mt-4">
+    <h2>Create Course</h2>
+    <hr />
+
+    <form asp-controller="Courses"
+          asp-action="Create"
+          method="post">
+
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger"></div>
+
+        <div class="mb-3">
+            <label asp-for="Code" class="form-label"></label>
+            <input asp-for="Code" class="form-control" />
+            <span asp-validation-for="Code" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Title" class="form-label"></label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label"></label>
+            <textarea asp-for="Description"
+                      class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Description"
+                  class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CourseCategoryId"
+                   class="form-label">Category</label>
+
+            <select asp-for="CourseCategoryId"
+                    class="form-select">
+                <option value="0">-- Select a category --</option>
+
+                @foreach (var category in Model.Categories)
+                {
+                    <option value="@category.CourseCategoryId">
+                        @category.Name
+                    </option>
+                }
+            </select>
+
+            <span asp-validation-for="CourseCategoryId"
+                  class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Create Course
+        </button>
+
+        <a asp-action="Index" class="btn btn-secondary">
+            Cancel
+        </a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

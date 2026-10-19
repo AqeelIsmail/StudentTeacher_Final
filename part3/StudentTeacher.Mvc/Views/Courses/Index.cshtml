@@ -8,9 +8,6 @@
 
     <h2 class="mb-4">Available Courses</h2>
 
-    <p>
-        Courses retrieved from the StudentTeacher Web API.
-    </p>
 
     @if (Model == null || !Model.Any())
     {
@@ -28,6 +25,7 @@
                     <th>Description</th>
                     <th>Category</th>
                     <th>Teacher</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
 
@@ -39,9 +37,19 @@
                         <td>@course.Title</td>
                         <td>@course.Description</td>
                         <td>@course.CategoryName</td>
+
                         <td>
                             @course.TeacherFirstName
                             @course.TeacherLastName
+                        </td>
+
+                        <td>
+                            <a asp-controller="Courses"
+                               asp-action="Details"
+                               asp-route-id="@course.CourseId"
+                               class="btn btn-primary btn-sm">
+                                View Details
+                            </a>
                         </td>
                     </tr>
                 }
