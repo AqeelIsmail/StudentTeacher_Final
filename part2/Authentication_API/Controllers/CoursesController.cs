@@ -421,7 +421,17 @@ namespace Authentication_API.Controllers
             }
 
             // 12. Return the new image URL.
-            return Ok(new { imageUrl = newImageUrl });
+            return Ok(new
+            {
+                imageUrl = newImageUrl,
+                course = new
+                {
+                    course.CourseId,
+                    course.Code,
+                    course.Title,
+                    course.CourseImageUrl
+                }
+            });
         }
 
 
