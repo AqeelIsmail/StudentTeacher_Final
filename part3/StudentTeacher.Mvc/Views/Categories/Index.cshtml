@@ -1,0 +1,55 @@
+@model List<StudentTeacher.Mvc.Models.CourseCategoryViewModel>
+@{
+    ViewData["Title"] = "Manage Categories";
+}
+
+<div class="container mt-4">
+    <h2>Manage Course Categories</h2>
+    <p class="text-muted">Categories are shared across courses.</p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <p><a asp-action="Create" class="btn btn-primary">Add Category</a></p>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">There are no categories yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr><th>Name</th><th>Description</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var category in Model)
+                    {
+                        <tr>
+                            <td>@category.Name</td>
+                            <td>@category.Description</td>
+                            <td>
+                                <a asp-action="Edit" asp-route-id="@category.CourseCategoryId"
+                                   class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form asp-action="Delete" asp-route-id="@category.CourseCategoryId"
+                                      method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete this category?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <p class="text-muted">A category cannot be deleted while courses use it.</p>
+    }
+</div>

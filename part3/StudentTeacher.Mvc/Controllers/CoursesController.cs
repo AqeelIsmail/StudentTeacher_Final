@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Mvc;
 using StudentTeacher.Mvc.Models;
 using System.Net.Http.Json;
@@ -14,31 +13,46 @@ namespace StudentTeacher.Mvc.Controllers
             _clientFactory = clientFactory;
         }
 
+        // Visitors and Students can filter the available courses by category.
         [HttpGet]
-        public async Task<IActionResult> Index()
-        {
-            // Create the named HttpClient configured in Program.cs.
-            var client = _clientFactory.CreateClient("StudentTeacherApi");
 
+        public async Task<IActionResult> Index(
+    [FromQuery(Name = "SelectedCategoryId")] int? categoryId)
+        {
+            var client = _clientFactory.CreateClient("StudentTeacherApi");
             client.BaseAddress = new Uri("https://localhost:7261/");
 
-            // Send a GET request to the public API endpoint.
-            using var response = await client.GetAsync("api/Courses");
-
-            // Check whether the API request succeeded.
-            if (!response.IsSuccessStatusCode)
-            {
-                return StatusCode(
-                    (int)response.StatusCode,
+            // Read course and category data from the API, not SQL Server.
+            using var coursesResponse = await client.GetAsync("api/Courses");
+            if (!coursesResponse.IsSuccessStatusCode)
+                return StatusCode((int)coursesResponse.StatusCode,
                     "Unable to retrieve courses from the API.");
+
+            using var categoriesResponse = await client.GetAsync("api/Categories");
+            if (!categoriesResponse.IsSuccessStatusCode)
+                return StatusCode((int)categoriesResponse.StatusCode,
+                    "Unable to retrieve course categories.");
+
+            var courses = await coursesResponse.Content
+                .ReadFromJsonAsync<List<CourseViewModel>>() ?? new();
+            var categories = await categoriesResponse.Content
+                .ReadFromJsonAsync<List<CourseCategoryOption>>() ?? new();
+
+            // Filtering here only changes what MVC displays.
+            // Creating and editing data still happens through the API.
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                courses = courses
+                    .Where(c => c.CourseCategoryId == categoryId.Value)
+                    .ToList();
             }
 
-            // Convert the JSON response into a list of C# objects.
-            var courses = await response.Content
-                .ReadFromJsonAsync<List<CourseViewModel>>();
-
-            // Pass the list to the Razor view.
-            return View(courses ?? new List<CourseViewModel>());
+            return View(new CourseCatalogueViewModel
+            {
+                Courses = courses,
+                Categories = categories,
+                SelectedCategoryId = categoryId
+            });
         }
 
 

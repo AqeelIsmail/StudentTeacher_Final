@@ -54,6 +54,10 @@
 
             <span asp-validation-for="CourseCategoryId"
                   class="text-danger"></span>
+            <div class="form-text">
+                Need a new category?
+                <a asp-controller="Categories" asp-action="Create">Create a category</a>.
+            </div>
         </div>
 
         <div class="mb-3">
