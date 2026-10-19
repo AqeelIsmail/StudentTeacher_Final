@@ -23,6 +23,9 @@ namespace StudentTeacher.Mvc.Models
 
         public string? CourseImageUrl { get; set; }
 
+        // Set by MVC after checking the API for course ownership.
+        public bool CanManageCourse { get; set; }
+
         public DateTime CreatedAt { get; set; }
     }
 }

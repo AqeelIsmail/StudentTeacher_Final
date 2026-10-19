@@ -1,4 +1,4 @@
-﻿@model StudentTeacher.Mvc.Models.CreateCourseViewModel
+@model StudentTeacher.Mvc.Models.CreateCourseViewModel
 
 @{
     ViewData["Title"] = "Create Course";
@@ -10,7 +10,8 @@
 
     <form asp-controller="Courses"
           asp-action="Create"
-          method="post">
+          method="post"
+          enctype="multipart/form-data">
 
         <div asp-validation-summary="ModelOnly"
              class="text-danger"></div>
@@ -53,6 +54,12 @@
 
             <span asp-validation-for="CourseCategoryId"
                   class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Image" class="form-label">Course image (optional)</label>
+            <input asp-for="Image" type="file" accept=".jpg,.jpeg,.png" class="form-control" />
+            <div class="form-text">JPG or PNG, maximum 5 MB.</div>
         </div>
 
         <button type="submit" class="btn btn-primary">

@@ -1,4 +1,4 @@
-﻿@model StudentTeacher.Mvc.Models.CourseViewModel
+@model StudentTeacher.Mvc.Models.CourseViewModel
 
 @{
     ViewData["Title"] = "Course Details";
@@ -8,6 +8,11 @@
 
     <h2>Course Details</h2>
     <hr />
+
+    @if (TempData["Error"] is string errorMessage)
+    {
+        <div class="alert alert-warning">@errorMessage</div>
+    }
 
     <div class="card shadow-sm">
         <div class="card-body">
@@ -62,6 +67,19 @@
 
         </div>
     </div>
+
+    @if (Model.CanManageCourse)
+    {
+        <div class="mt-3 d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.CourseId"
+               class="btn btn-primary">Edit Course / Replace Image</a>
+            <form asp-action="Delete" asp-route-id="@Model.CourseId"
+                  method="post" onsubmit="return confirm('Delete this course?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger">Delete Course</button>
+            </form>
+        </div>
+    }
 
     <div class="mt-3">
         <a asp-controller="Courses"

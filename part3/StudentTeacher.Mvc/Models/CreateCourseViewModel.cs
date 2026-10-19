@@ -19,6 +19,9 @@ namespace StudentTeacher.Mvc.Models
         [MaxLength(1000)]
         public string? Description { get; set; }
 
+        // Optional course banner uploaded via the Part 2 API.
+        public IFormFile? Image { get; set; }
+
         // Used to populate the category dropdown.
         public List<CourseCategoryOption> Categories { get; set; } = new();
     }
