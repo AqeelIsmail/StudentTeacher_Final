@@ -1,28 +1,35 @@
-﻿@{
-    Layout = "_Layout";
-    ViewData["Title"] = "Student Area";
+@model StudentTeacher.Mvc.Models.StudentDashboardViewModel
+@{
+    ViewData["Title"] = "Student Dashboard";
 }
-@model string
-
 <div class="container mt-4">
+    <h2>Student Dashboard</h2>
+    <p class="text-muted">Browse courses and check your own enrolments.</p>
+    <p><a asp-controller="Courses" asp-action="Index" class="btn btn-primary">Browse Courses</a>
+       <a asp-controller="Enrolments" asp-action="My" class="btn btn-outline-primary">My Enrolments</a>
+       <a asp-controller="Results" asp-action="My" class="btn btn-outline-secondary">My Results</a></p>
 
-    <div class="p-4 mb-4 rounded shadow-sm text-white"
-         style="background-color: #198754;">
-
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h2 class="mb-1">Student Area</h2>
-                <p class="mb-0">Welcome, @Model</p>
-            </div>
-
-            <form asp-controller="Account"
-                  asp-action="Logout"
-                  method="post">
-                <button type="submit" class="btn btn-danger">
-                    Logout
-                </button>
-            </form>
-
+    <h4>My current enrolments (@Model.Enrolments.Count)</h4>
+    @if (Model.Enrolments.Count == 0)
+    {
+        <div class="alert alert-info">You have not enrolled in any courses yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead><tr><th>Course</th><th>Code</th><th>Status</th><th>Enrolled</th></tr></thead>
+                <tbody>
+                @foreach (var enrolment in Model.Enrolments)
+                {
+                    <tr><td>
+                        <a asp-controller="Courses" asp-action="Details" asp-route-id="@enrolment.CourseId">
+                            @enrolment.CourseTitle</a>
+                    </td><td>@enrolment.CourseCode</td><td>@enrolment.Status</td>
+                    <td>@enrolment.EnrolledAt.ToString("dd MMM yyyy")</td></tr>
+                }
+                </tbody>
+            </table>
         </div>
-    </div>
+    }
 </div>

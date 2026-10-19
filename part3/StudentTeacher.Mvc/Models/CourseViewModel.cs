@@ -1,4 +1,4 @@
-﻿
+
 namespace StudentTeacher.Mvc.Models
 {
     public class CourseViewModel
@@ -25,6 +25,9 @@ namespace StudentTeacher.Mvc.Models
 
         // Set by MVC after checking the API for course ownership.
         public bool CanManageCourse { get; set; }
+
+        public bool IsStudent { get; set; }
+        public StudentEnrolmentViewModel? StudentEnrolment { get; set; }
 
         public DateTime CreatedAt { get; set; }
     }

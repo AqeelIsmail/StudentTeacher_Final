@@ -1,0 +1,86 @@
+@model StudentTeacher.Mvc.Models.TeacherCourseEnrolmentsViewModel
+@{
+    ViewData["Title"] = "Course Enrolments";
+}
+<div class="container mt-4">
+    <h2>Course Enrolments</h2>
+    <p class="text-muted">
+        @Model.CourseCode - @(string.IsNullOrWhiteSpace(Model.CourseTitle) ? $"Course {Model.CourseId}" : Model.CourseTitle)
+    </p>
+    <p class="d-flex flex-wrap gap-2">
+        <a asp-controller="Home" asp-action="TeacherArea"
+           class="btn btn-outline-secondary btn-sm">Back to Teacher Dashboard</a>
+        <a asp-controller="Results" asp-action="Course" asp-route-id="@Model.CourseId"
+           class="btn btn-outline-primary btn-sm">Course Results</a>
+    </p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success" role="status">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["Error"]</div>
+    }
+
+    @if (Model.Enrolments.Count == 0)
+    {
+        <div class="alert alert-info">No students have enrolled in this course yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Student Number</th><th>Student</th><th>Enrolled</th>
+                        <th>Current Status</th><th>Change Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var enrolment in Model.Enrolments)
+                    {
+                        <tr>
+                            <td>@enrolment.StudentNumber</td>
+                            <td>@enrolment.FirstName @enrolment.LastName</td>
+                            <td>@enrolment.EnrolledAt.ToString("dd MMM yyyy")</td>
+                            <td>
+                                @if (enrolment.Status == "Confirmed")
+                                {
+                                    <span class="badge bg-success">Confirmed</span>
+                                }
+                                else if (enrolment.Status == "Pending")
+                                {
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@enrolment.Status</span>
+                                }
+                            </td>
+                            <td>
+                                <form asp-controller="Enrolments" asp-action="UpdateStatus"
+                                      method="post" class="d-flex gap-2 align-items-center">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="courseId" value="@Model.CourseId" />
+                                    <input type="hidden" name="enrolmentId" value="@enrolment.EnrolmentId" />
+                                    <select name="status" class="form-select form-select-sm"
+                                            aria-label="Change status for @enrolment.FirstName @enrolment.LastName"
+                                            required>
+                                        @if (enrolment.Status != "Pending" && enrolment.Status != "Confirmed")
+                                        {
+                                            <option value="" selected disabled>Choose status</option>
+                                        }
+                                        <option value="Pending" selected="@(enrolment.Status == "Pending")">Pending</option>
+                                        <option value="Confirmed" selected="@(enrolment.Status == "Confirmed")">Confirmed</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,29 @@
+@model List<StudentTeacher.Mvc.Models.StudentEnrolmentViewModel>
+@{
+    ViewData["Title"] = "My Enrolments";
+}
+<div class="container mt-4">
+    <h2>My Enrolments</h2>
+    <p><a asp-controller="Courses" asp-action="Index" class="btn btn-outline-primary">Browse Courses</a></p>
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-info">You have not enrolled in any courses yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive"><table class="table table-striped">
+            <thead><tr><th>Course</th><th>Code</th><th>Enrolled On</th><th>Status</th></tr></thead>
+            <tbody>
+            @foreach (var e in Model)
+            {
+                <tr>
+                    <td><a asp-controller="Courses" asp-action="Details" asp-route-id="@e.CourseId">@e.CourseTitle</a></td>
+                    <td>@e.CourseCode</td>
+                    <td>@e.EnrolledAt.ToString("dd MMM yyyy")</td>
+                    <td>@e.Status</td>
+                </tr>
+            }
+            </tbody>
+        </table></div>
+    }
+</div>

@@ -94,6 +94,23 @@ namespace StudentTeacher.Mvc.Controllers
                 else if (ownerResponse.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
                     HttpContext.Session.Remove("ApiAuthCookie");
+                    HttpContext.Session.Remove("ApiRole");
+                }
+                else if (ownerResponse.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    // A Student cannot call /api/Courses/my. Check the Student's enrolments.
+                    using var studentRequest = new HttpRequestMessage(
+                        HttpMethod.Get, "api/enrolments/my");
+                    studentRequest.Headers.TryAddWithoutValidation("Cookie", authCookie);
+                    using var studentResponse = await client.SendAsync(studentRequest);
+                    if (studentResponse.IsSuccessStatusCode)
+                    {
+                        course.IsStudent = true;
+                        var enrolled = await studentResponse.Content
+                            .ReadFromJsonAsync<List<StudentEnrolmentViewModel>>() ?? new();
+                        course.StudentEnrolment = enrolled.FirstOrDefault(
+                            e => e.CourseId == id);
+                    }
                 }
             }
 

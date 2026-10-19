@@ -1,0 +1,96 @@
+@model StudentTeacher.Mvc.Models.TeacherCourseResultsViewModel
+@{
+    ViewData["Title"] = "Course Results";
+}
+<div class="container mt-4">
+    <h2>Course Results</h2>
+    <p class="text-muted">@Model.CourseCode — @(string.IsNullOrWhiteSpace(Model.CourseTitle) ? $"Course {Model.CourseId}" : Model.CourseTitle)</p>
+    <p class="d-flex flex-wrap gap-2">
+        <a asp-controller="Home" asp-action="TeacherArea" class="btn btn-outline-secondary btn-sm">Teacher Dashboard</a>
+        <a asp-controller="Enrolments" asp-action="Course" asp-route-id="@Model.CourseId" class="btn btn-outline-primary btn-sm">Manage Enrolments</a>
+    </p>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert-success" role="status">@success</div>
+    }
+    @if (TempData["Error"] is string error)
+    {
+        <div class="alert alert-danger" role="alert">@error</div>
+    }
+
+    <p>Recorded results: <strong>@Model.Results.Count</strong> of <strong>@Model.Enrolments.Count</strong> enrolments.</p>
+    @if (Model.Enrolments.Count == 0)
+    {
+        <div class="alert alert-info">No students have enrolled in this course yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>Student Number</th><th>Student</th><th>Status</th>
+                        <th>Mark</th><th>Outcome</th><th>Record / Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var enrolment in Model.Enrolments)
+                {
+                    var result = Model.Results.FirstOrDefault(r => r.EnrolmentId == enrolment.EnrolmentId);
+                    <tr>
+                        <td>@enrolment.StudentNumber</td>
+                        <td>@enrolment.FirstName @enrolment.LastName</td>
+                        <td><span class="badge @(enrolment.Status == "Confirmed" ? "bg-success" : "bg-secondary")">@enrolment.Status</span></td>
+                        <td>@(result == null ? "—" : result.FinalMark.ToString("0.##") + "%")</td>
+                        <td>
+                            @if (result != null)
+                            {
+                                <span class="badge @(result.Outcome == "Pass" ? "bg-success" : "bg-danger")">@result.Outcome</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not recorded</span>
+                            }
+                        </td>
+                        <td>
+                            @if (result != null)
+                            {
+                                <form asp-controller="Results" asp-action="Update" method="post"
+                                      class="d-flex flex-wrap gap-2 align-items-center">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="courseId" value="@Model.CourseId" />
+                                    <input type="hidden" name="resultId" value="@result.CourseResultId" />
+                                    <input type="number" name="finalMark" value="@result.FinalMark.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                           min="0" max="100" step="0.01" required
+                                           class="form-control form-control-sm" style="max-width:110px;"
+                                           aria-label="Updated mark for @enrolment.StudentNumber" />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Update Mark</button>
+                                </form>
+                            }
+                            else if (enrolment.Status == "Confirmed")
+                            {
+                                <form asp-controller="Results" asp-action="Record" method="post"
+                                      class="d-flex flex-wrap gap-2 align-items-center">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="courseId" value="@Model.CourseId" />
+                                    <input type="hidden" name="enrolmentId" value="@enrolment.EnrolmentId" />
+                                    <input type="number" name="finalMark" min="0" max="100" step="0.01" required
+                                           class="form-control form-control-sm" style="max-width:110px;"
+                                           aria-label="Final mark for @enrolment.StudentNumber" />
+                                    <button type="submit" class="btn btn-sm btn-primary">Record Result</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Confirm enrolment first</span>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <p class="text-muted small">The API calculates Pass for marks of 50 or above and Fail otherwise.</p>
+    }
+</div>

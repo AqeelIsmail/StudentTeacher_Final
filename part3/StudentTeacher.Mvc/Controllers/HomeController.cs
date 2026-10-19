@@ -1,79 +1,128 @@
 using Microsoft.AspNetCore.Mvc;
 using StudentTeacher.Mvc.Models;
-using System.Diagnostics;
+using System.Net;
+using System.Net.Http.Json;
 
-namespace StudentTeacher.Mvc.Controllers
+namespace StudentTeacher.Mvc.Controllers;
+
+public class HomeController : Controller
 {
-    public class HomeController : Controller
+    private readonly IHttpClientFactory _clientFactory;
+
+    public HomeController(IHttpClientFactory clientFactory)
     {
-        private readonly IHttpClientFactory _clientFactory;
+        _clientFactory = clientFactory;
+    }
 
-        public HomeController(IHttpClientFactory clientFactory)
+    public IActionResult Index()
+    {
+        // The role is set from GET /api/auth/profile after successful login.
+        var role = HttpContext.Session.GetString("ApiRole");
+        var cookie = HttpContext.Session.GetString("ApiAuthCookie");
+        if (!string.IsNullOrWhiteSpace(cookie) && role == "Teacher")
+            return RedirectToAction(nameof(TeacherArea));
+        if (!string.IsNullOrWhiteSpace(cookie) && role == "Student")
+            return RedirectToAction(nameof(StudentArea));
+        return RedirectToAction("Index", "Courses");
+    }
+
+    public async Task<IActionResult> TeacherArea()
+    {
+        string? cookie = HttpContext.Session.GetString("ApiAuthCookie");
+        if (string.IsNullOrWhiteSpace(cookie))
+            return RedirectToAction("Login", "Account");
+
+        var client = _clientFactory.CreateClient("StudentTeacherApi");
+        client.BaseAddress = new Uri("https://localhost:7261/");
+
+        // Confirm Teacher role through a protected API endpoint.
+        using var roleResponse = await SendWithCookie(client, HttpMethod.Get,
+            "api/Teacher/teacher-only", cookie);
+        if (roleResponse.StatusCode == HttpStatusCode.Unauthorized)
+            return ClearSessionAndLogin();
+        if (!roleResponse.IsSuccessStatusCode)
+            return StatusCode((int)roleResponse.StatusCode, "Teacher access required.");
+
+        using var coursesResponse = await SendWithCookie(client, HttpMethod.Get,
+            "api/Courses/my", cookie);
+        if (coursesResponse.StatusCode == HttpStatusCode.Unauthorized)
+            return ClearSessionAndLogin();
+        if (!coursesResponse.IsSuccessStatusCode)
+            return StatusCode((int)coursesResponse.StatusCode, "Unable to load your courses.");
+
+        var courses = await coursesResponse.Content
+            .ReadFromJsonAsync<List<CourseViewModel>>() ?? new();
+        var model = new TeacherDashboardViewModel();
+
+        foreach (var course in courses)
         {
-            _clientFactory = clientFactory;
+            // This endpoint checks course ownership inside the API.
+            using var enrolmentsResponse = await SendWithCookie(client,
+                HttpMethod.Get, $"api/courses/{course.CourseId}/enrolments", cookie);
+            if (enrolmentsResponse.StatusCode == HttpStatusCode.Unauthorized)
+                return ClearSessionAndLogin();
+            if (!enrolmentsResponse.IsSuccessStatusCode)
+                return StatusCode((int)enrolmentsResponse.StatusCode,
+                    "Unable to load enrolment counts for a course.");
+
+            var enrolments = await enrolmentsResponse.Content
+                .ReadFromJsonAsync<List<CourseEnrolmentViewModel>>() ?? new();
+            model.Courses.Add(new TeacherCourseSummaryViewModel
+            {
+                CourseId = course.CourseId,
+                Code = course.Code,
+                Title = course.Title,
+                EnrolmentCount = enrolments.Count,
+                ConfirmedCount = enrolments.Count(e => e.Status == "Confirmed")
+            });
         }
 
-        public async Task<IActionResult> Index()
+        return View(model);
+    }
+
+    public async Task<IActionResult> StudentArea()
+    {
+        string? cookie = HttpContext.Session.GetString("ApiAuthCookie");
+        if (string.IsNullOrWhiteSpace(cookie))
+            return RedirectToAction("Login", "Account");
+
+        var client = _clientFactory.CreateClient("StudentTeacherApi");
+        client.BaseAddress = new Uri("https://localhost:7261/");
+
+        using var roleResponse = await SendWithCookie(client, HttpMethod.Get,
+            "api/Student/student-only", cookie);
+        if (roleResponse.StatusCode == HttpStatusCode.Unauthorized)
+            return ClearSessionAndLogin();
+        if (!roleResponse.IsSuccessStatusCode)
+            return StatusCode((int)roleResponse.StatusCode, "Student access required.");
+
+        using var response = await SendWithCookie(client, HttpMethod.Get,
+            "api/enrolments/my", cookie);
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+            return ClearSessionAndLogin();
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode, "Unable to load your enrolments.");
+
+        var model = new StudentDashboardViewModel
         {
-            return View();
-        }
+            Enrolments = await response.Content
+                .ReadFromJsonAsync<List<StudentEnrolmentViewModel>>() ?? new()
+        };
+        return View(model);
+    }
 
-        //Understand this through the slide: Go to slide 6 in the ppt called 'cookies'
-        public async Task<IActionResult> TeacherArea()
-        {
-            var client = _clientFactory.CreateClient("StudentTeacherApi");
-            client.BaseAddress = new Uri("https://localhost:7261/");
+    private async Task<HttpResponseMessage> SendWithCookie(HttpClient client,
+        HttpMethod method, string path, string cookie)
+    {
+        using var request = new HttpRequestMessage(method, path);
+        request.Headers.TryAddWithoutValidation("Cookie", cookie);
+        return await client.SendAsync(request);
+    }
 
-            //Finds the session that was named at login 'ApiAuthCooki' (finds the drawer with the label)
-            var authCookie = HttpContext.Session.GetString("ApiAuthCookie");
-            if (authCookie != null)
-            {
-                //If it is found, keyword 'Cookie' is attached to the request sent to the API (API looks for this keyword in request header)
-                client.DefaultRequestHeaders.Add("Cookie", authCookie);
-            }
-            //API receives the request with the Cookie attached, allowing API to know which role is logged in 
-            var response = await client.GetAsync("api/Teacher/teacher-only");
-
-            string modelMessage;
-
-            if (response.IsSuccessStatusCode)
-            {
-                modelMessage = await response.Content.ReadAsStringAsync();
-            }
-            else
-            {
-                modelMessage = "Access Denied: " + response.StatusCode;
-            }
-
-
-            return View(model: modelMessage );
-        }
-
-        public async Task<IActionResult> StudentArea()
-        {
-            var client = _clientFactory.CreateClient("StudentTeacherApi");
-            client.BaseAddress = new Uri("https://localhost:7261/");
-
-            var authCookie = HttpContext.Session.GetString("ApiAuthCookie");
-            if (authCookie != null)
-            {
-                client.DefaultRequestHeaders.Add("Cookie", authCookie);
-            }
-
-            var response = await client.GetAsync("api/Student/student-only");
-            string modelMessage;
-
-            if (response.IsSuccessStatusCode)
-            {
-                modelMessage = await response.Content.ReadAsStringAsync();
-            }
-            else
-            {
-                modelMessage = "Access Denied: " + response.StatusCode;
-            }
-
-
-            return View(model: modelMessage);
-        }
+    private IActionResult ClearSessionAndLogin()
+    {
+        HttpContext.Session.Remove("ApiAuthCookie");
+        HttpContext.Session.Remove("ApiRole");
+        return RedirectToAction("Login", "Account");
     }
 }

@@ -1,0 +1,32 @@
+@model List<StudentTeacher.Mvc.Models.StudentResultViewModel>
+@{
+    ViewData["Title"] = "My Results";
+}
+<div class="container mt-4">
+    <h2>My Results</h2>
+    <p><a asp-controller="Home" asp-action="StudentArea" class="btn btn-outline-secondary btn-sm">Student Dashboard</a></p>
+    @if (Model.Count == 0)
+    {
+        <div class="alert alert-info">No results have been recorded for you yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead><tr><th>Course</th><th>Code</th><th>Final Mark</th><th>Outcome</th><th>Recorded</th></tr></thead>
+                <tbody>
+                @foreach (var result in Model)
+                {
+                    <tr>
+                        <td><a asp-controller="Courses" asp-action="Details" asp-route-id="@result.CourseId">@result.CourseTitle</a></td>
+                        <td>@result.CourseCode</td>
+                        <td>@result.FinalMark.ToString("0.##")%</td>
+                        <td><span class="badge @(result.Outcome == "Pass" ? "bg-success" : "bg-danger")">@result.Outcome</span></td>
+                        <td>@result.RecordedAt.ToString("dd MMM yyyy")</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

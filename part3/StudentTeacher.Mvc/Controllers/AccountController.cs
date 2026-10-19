@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using StudentTeacher.Mvc.Models;
 using System.Text;
-using System.Text.Json.Serialization;
+using System.Text.Json;
 namespace StudentTeacher.Mvc.Controllers;
 
 public class AccountController : Controller
@@ -60,6 +60,7 @@ public class AccountController : Controller
 
 
     [HttpPost] //understand this through slide 5: in ppt called cookies
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model)
     {
         /* MVC server sends a request to the API server */
@@ -97,10 +98,33 @@ public class AccountController : Controller
             // Keep only the cookie name and value.
             var authCookie = setCookie.Split(';', 2)[0];
 
-            // Store it in this user's MVC session.
-            HttpContext.Session.SetString("ApiAuthCookie", authCookie);
+            // Verify the role with the API, not with a value supplied by the browser.
+            using var profileRequest = new HttpRequestMessage(
+                HttpMethod.Get, "api/auth/profile");
+            profileRequest.Headers.TryAddWithoutValidation("Cookie", authCookie);
+            using var profileResponse = await client.SendAsync(profileRequest);
+            if (!profileResponse.IsSuccessStatusCode)
+            {
+                ModelState.AddModelError("", "Login succeeded, but the user profile could not be verified.");
+                return View(model);
+            }
 
-            return RedirectToAction("Index", "Home");
+            using var profileDocument = JsonDocument.Parse(
+                await profileResponse.Content.ReadAsStringAsync());
+            string? role = profileDocument.RootElement
+                .GetProperty("role").GetString();
+
+            if (role != "Teacher" && role != "Student")
+            {
+                ModelState.AddModelError("", "The API returned an unsupported account role.");
+                return View(model);
+            }
+
+            HttpContext.Session.SetString("ApiAuthCookie", authCookie);
+            HttpContext.Session.SetString("ApiRole", role);
+
+            return RedirectToAction(
+                role == "Teacher" ? "TeacherArea" : "StudentArea", "Home");
         }
 
 
@@ -152,6 +176,7 @@ public class AccountController : Controller
 
         // Remove the authentication state stored by MVC.
         HttpContext.Session.Remove("ApiAuthCookie");
+        HttpContext.Session.Remove("ApiRole");
         //Session.Remove() ensures MVC stops using the authentication cookie,
         //even if the API cannot be reached.
 
