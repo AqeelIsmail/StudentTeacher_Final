@@ -1,3 +1,4 @@
+using Authentication_API.Services;
 using Authentication_API.Models;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
@@ -15,6 +16,9 @@ namespace Authentication_API
 
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // Register the Azure Blob Storage service for dependency injection.
+            builder.Services.AddScoped<BlobStorageService>();   
 
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie();
