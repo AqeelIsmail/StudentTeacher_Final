@@ -1,4 +1,5 @@
-﻿using Authentication_API.DTOs;
+﻿using Authentication_API.Services; //to use azure BlobStorageService
+using Authentication_API.DTOs;
 using Authentication_API.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,10 +15,17 @@ namespace Authentication_API.Controllers
     public class CoursesController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly BlobStorageService _blobStorageService;
+        private readonly IConfiguration _configuration;
 
-        public CoursesController(AppDbContext context)
+        public CoursesController(
+            AppDbContext context,
+            BlobStorageService blobStorageService,
+            IConfiguration configuration)
         {
             _context = context;
+            _blobStorageService = blobStorageService;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -310,6 +318,99 @@ namespace Authentication_API.Controllers
                 .Select(t => (int?)t.TeacherProfileId)
                 .FirstOrDefaultAsync();
         }
+
+        //POST /api/Courses/{id}/image
+
+        /// <summary>
+        /// Uploads or replaces a course image.
+        /// </summary>
+        /// <remarks>
+        /// Only the Teacher who owns the course can upload its image.
+        /// The file is stored in Azure Blob Storage.
+        /// The image URL is saved in SQL Server.
+        /// </remarks>
+        /// <param name="id">The ID of the course.</param>
+        /// <param name="image">The JPG or PNG image to upload.</param>
+        /// <returns>The URL of the uploaded image.</returns>
+        /// <response code="200">Image uploaded successfully.</response>
+        /// <response code="400">Invalid image file.</response>
+        /// <response code="401">Authentication required.</response>
+        /// <response code="403">Teacher does not own the course.</response>
+        /// <response code="404">Course not found.</response>
+        [HttpPost("{id:int}/image")]
+        [Authorize(Roles = "Teacher")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UploadCourseImage(
+            int id,
+            IFormFile image)
+        {
+            // 1. Find the selected course.
+            var course = await _context.Courses.FindAsync(id);
+
+            if (course == null)
+                return NotFound("Course not found.");
+
+            // 2. Get the logged-in Teacher's profile ID.
+            int? teacherId = await GetCurrentTeacherProfileId();
+
+            // Only the Teacher who created the course may upload.
+            if (teacherId == null ||
+                course.TeacherProfileId != teacherId.Value)
+            {
+                return Forbid();
+            }
+
+            // 3. Check that a file was provided.
+            if (image == null || image.Length == 0)
+                return BadRequest("Please select an image.");
+
+            // 4. Limit image size to 5 MB.
+            if (image.Length > 5 * 1024 * 1024)
+                return BadRequest("Image must be smaller than 5 MB.");
+
+            // 5. Allow only JPG and PNG images.
+            string extension = Path.GetExtension(image.FileName)
+                .ToLowerInvariant();
+
+            if (extension != ".jpg" &&
+                extension != ".jpeg" &&
+                extension != ".png")
+            {
+                return BadRequest("Only JPG and PNG images are allowed.");
+            }
+
+            // Check the declared content type matches the extension.
+            bool validType =
+                ((extension == ".jpg" || extension == ".jpeg")
+                    && image.ContentType == "image/jpeg")
+                || (extension == ".png"
+                    && image.ContentType == "image/png");
+
+            if (!validType)
+                return BadRequest("Invalid image content type.");
+
+            // 6. Read the container name from configuration.
+            string containerName =
+                _configuration["AzureStorage:CourseImagesContainer"]!;
+
+            // 7. Upload the file to Azurite.
+            string imageUrl = await _blobStorageService.UploadImageAsync(
+                image, containerName);
+
+            // 8. Save the returned URL to SQL Server.
+            course.CourseImageUrl = imageUrl;
+
+            await _context.SaveChangesAsync();
+
+            // 9. Return the image URL to the client.
+            return Ok(new { imageUrl });
+        }
+
     }
 
     //public class CourseDto
