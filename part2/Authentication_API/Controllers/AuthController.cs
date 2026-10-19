@@ -369,7 +369,7 @@ public class AuthController : Controller
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UploadProfileImage(
-        [FromForm] IFormFile image,
+        IFormFile image,
         [FromServices] Authentication_API.Services.BlobStorageService blobStorage,
         [FromServices] IConfiguration configuration)
     {
