@@ -22,7 +22,7 @@ public class EnrolmentsController : Controller
             return RedirectToAction("Login", "Account");
 
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
         using var request = new HttpRequestMessage(HttpMethod.Get, "api/enrolments/my");
         request.Headers.TryAddWithoutValidation("Cookie", cookie);
         using var response = await client.SendAsync(request);
@@ -54,7 +54,7 @@ public class EnrolmentsController : Controller
             return RedirectToAction("Login", "Account");
 
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
         using var request = new HttpRequestMessage(HttpMethod.Post,
             $"api/courses/{courseId}/enrol");
         request.Headers.TryAddWithoutValidation("Cookie", cookie);
@@ -93,7 +93,7 @@ public class EnrolmentsController : Controller
             return RedirectToAction("Login", "Account");
 
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
 
         using var request = new HttpRequestMessage(HttpMethod.Get,
             $"api/courses/{id}/enrolments");
@@ -155,7 +155,7 @@ public class EnrolmentsController : Controller
             return RedirectToAction("Login", "Account");
 
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
 
         using var request = new HttpRequestMessage(HttpMethod.Put,
             $"api/enrolments/{enrolmentId}/status")

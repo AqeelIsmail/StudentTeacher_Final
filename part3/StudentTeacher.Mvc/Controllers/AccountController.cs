@@ -36,7 +36,7 @@ public class AccountController : Controller
 
         //Create a client instance 
         var client = _clientFactory.CreateClient();
-        client.BaseAddress = new Uri("https://localhost:7261/");//localhost of YOUR API
+        ////client.BaseAddress = new Uri("https://localhost:7261/");//localhost of YOUR API
 
         //Convert the registration model into JSON.
         var json = JsonConvert.SerializeObject(model);//serialize the user input to send to API
@@ -66,7 +66,7 @@ public class AccountController : Controller
     {
         /* MVC server sends a request to the API server */
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
 
         var json = JsonConvert.SerializeObject(model);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -146,7 +146,7 @@ public class AccountController : Controller
         {
             // Use the named HttpClient configured in Program.cs.
             var client = _clientFactory.CreateClient("StudentTeacherApi");
-            client.BaseAddress = new Uri("https://localhost:7261/");
+            ////client.BaseAddress = new Uri("https://localhost:7261/");
 
             // Send the current user's authentication cookie to the API.
             using var request = new HttpRequestMessage( 
@@ -194,7 +194,7 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Login));
 
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "api/auth/profile");
         request.Headers.TryAddWithoutValidation("Cookie", cookie);
@@ -240,7 +240,7 @@ public class AccountController : Controller
         }
 
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
 
         using var request = new HttpRequestMessage(HttpMethod.Put, "api/auth/profile");
         request.Headers.TryAddWithoutValidation("Cookie", cookie);
@@ -276,7 +276,7 @@ public class AccountController : Controller
         }
 
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
 
         using var form = new MultipartFormDataContent();
         using var file = new StreamContent(image.OpenReadStream());

@@ -19,8 +19,12 @@ namespace StudentTeacher.Mvc.Controllers
         public async Task<IActionResult> Index(
     [FromQuery(Name = "SelectedCategoryId")] int? categoryId)
         {
+            // Create the named HTTP client.
+            // Its API base address is configured in Program.cs.
+            // hence commented out the line after the client creation.
             var client = _clientFactory.CreateClient("StudentTeacherApi");
-            client.BaseAddress = new Uri("https://localhost:7261/");
+            
+            ////client.BaseAddress = new Uri("https://localhost:7261/");
 
             // Read course and category data from the API, not SQL Server.
             using var coursesResponse = await client.GetAsync("api/Courses");
@@ -62,7 +66,7 @@ namespace StudentTeacher.Mvc.Controllers
             // Create the named HttpClient.
             var client = _clientFactory.CreateClient("StudentTeacherApi");
 
-            client.BaseAddress = new Uri("https://localhost:7261/");
+            ////client.BaseAddress = new Uri("https://localhost:7261/");
 
             // Retrieve a particular course using its ID.
             using var response = await client.GetAsync($"api/Courses/{id}");
@@ -141,7 +145,7 @@ namespace StudentTeacher.Mvc.Controllers
                 return RedirectToAction("Login", "Account");
 
             var client = _clientFactory.CreateClient("StudentTeacherApi");
-            client.BaseAddress = new Uri("https://localhost:7261/");
+            ////client.BaseAddress = new Uri("https://localhost:7261/");
 
             // Verify that the logged-in user is a Teacher.
             using var check = new HttpRequestMessage(
@@ -180,7 +184,7 @@ namespace StudentTeacher.Mvc.Controllers
                 return RedirectToAction("Login", "Account");
 
             var client = _clientFactory.CreateClient("StudentTeacherApi");
-            client.BaseAddress = new Uri("https://localhost:7261/");
+            ////client.BaseAddress = new Uri("https://localhost:7261/");
 
             if (!ModelState.IsValid)
             {
@@ -251,7 +255,7 @@ namespace StudentTeacher.Mvc.Controllers
                 return RedirectToAction("Login", "Account");
 
             var client = _clientFactory.CreateClient("StudentTeacherApi");
-            client.BaseAddress = new Uri("https://localhost:7261/");
+           // //client.BaseAddress = new Uri("https://localhost:7261/");
 
             using var ownershipRequest = new HttpRequestMessage(
                 HttpMethod.Get, "api/Courses/my");
@@ -303,7 +307,7 @@ namespace StudentTeacher.Mvc.Controllers
                 return RedirectToAction("Login", "Account");
 
             var client = _clientFactory.CreateClient("StudentTeacherApi");
-            client.BaseAddress = new Uri("https://localhost:7261/");
+            ////client.BaseAddress = new Uri("https://localhost:7261/");
 
             if (!ModelState.IsValid)
             {
@@ -361,7 +365,7 @@ namespace StudentTeacher.Mvc.Controllers
                 return RedirectToAction("Login", "Account");
 
             var client = _clientFactory.CreateClient("StudentTeacherApi");
-            client.BaseAddress = new Uri("https://localhost:7261/");
+            ////client.BaseAddress = new Uri("https://localhost:7261/");
             using var request = new HttpRequestMessage(
                 HttpMethod.Delete, $"api/Courses/{id}");
             request.Headers.TryAddWithoutValidation("Cookie", authCookie);

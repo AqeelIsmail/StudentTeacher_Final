@@ -33,7 +33,7 @@ public class HomeController : Controller
             return RedirectToAction("Login", "Account");
 
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
 
         // Confirm Teacher role through a protected API endpoint.
         using var roleResponse = await SendWithCookie(client, HttpMethod.Get,
@@ -87,7 +87,7 @@ public class HomeController : Controller
             return RedirectToAction("Login", "Account");
 
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
 
         using var roleResponse = await SendWithCookie(client, HttpMethod.Get,
             "api/Student/student-only", cookie);

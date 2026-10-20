@@ -209,7 +209,7 @@ public class ResultsController : Controller
     private HttpClient CreateApiClient()
     {
         var client = _clientFactory.CreateClient("StudentTeacherApi");
-        client.BaseAddress = new Uri("https://localhost:7261/");
+        ////client.BaseAddress = new Uri("https://localhost:7261/");
         return client;
     }
 

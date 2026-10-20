@@ -1,0 +1,9 @@
+﻿# Exclude existing build output.
+bin/
+obj/
+
+# Exclude Visual Studio settings and Git history.
+.vs/
+.git/
+*.user
+*.suo
