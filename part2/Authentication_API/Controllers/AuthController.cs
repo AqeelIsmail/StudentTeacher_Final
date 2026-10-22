@@ -377,7 +377,7 @@ public class AuthController : Controller
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int userId))
             return Unauthorized();
 
-        // Validate the image in the same way as the course-image endpoint.
+        // Validate the image 
         if (image == null || image.Length == 0)
             return BadRequest("Please select an image.");
         if (image.Length > 5 * 1024 * 1024)
