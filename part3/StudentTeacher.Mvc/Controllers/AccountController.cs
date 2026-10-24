@@ -35,7 +35,7 @@ public class AccountController : Controller
         }
 
         //Create a client instance 
-        var client = _clientFactory.CreateClient();
+        var client = _clientFactory.CreateClient("StudentTeacherApi");        
         ////client.BaseAddress = new Uri("https://localhost:7261/");//localhost of YOUR API
 
         //Convert the registration model into JSON.

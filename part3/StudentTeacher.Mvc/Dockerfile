@@ -1,40 +1,35 @@
-﻿# Stage 1: build and publish our .NET 10 MVC application.
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
-# Set the working folder inside the build stage.
-WORKDIR /src
-
-# Copy the project file first and download its NuGet packages.
-# Docker can reuse this step when the project file has not changed.
-COPY StudentTeacher.Mvc.csproj .
-RUN dotnet restore StudentTeacher.Mvc.csproj
-
-# Copy the remaining source files.
-COPY . .
-
-# Compile and prepare the application for running.
-RUN dotnet publish StudentTeacher.Mvc.csproj \
-    -c Release \
-    -o /app/publish \
-    --no-restore
-
-# Stage 2: create the final image with the ASP.NET Core runtime.
-# The SDK and build tools stay out of this final image.
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+# This stage is used when running from VS in fast mode (Default for Debug configuration)
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 
 WORKDIR /app
 
-# Tell ASP.NET Core to listen on HTTP port 8080.
-ENV ASPNETCORE_HTTP_PORTS=8080
+# Create a writable directory for ASP.NET Core Data Protection keys.
+RUN mkdir -p /app/keys && chown $APP_UID /app/keys
 
-# Document the port used by the application.
-EXPOSE 8080
-
-# Copy the published application from the build stage.
-COPY --from=build /app/publish .
-
-# Run as the non-root application user provided by the .NET image.
 USER $APP_UID
 
-# Start the MVC application when the container starts.
+EXPOSE 8080
+EXPOSE 8081
+
+# This stage is used to build the service project
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+COPY ["StudentTeacher.Mvc.csproj", "."]
+RUN dotnet restore "./StudentTeacher.Mvc.csproj"
+COPY . .
+WORKDIR "/src/."
+RUN dotnet build "./StudentTeacher.Mvc.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+# This stage is used to publish the service project to be copied to the final stage
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./StudentTeacher.Mvc.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "StudentTeacher.Mvc.dll"]

@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.DataProtection;
+using System.Runtime.Intrinsics.Arm;
+using static System.Net.WebRequestMethods;
 namespace StudentTeacher.Mvc
 {
     public class Program
@@ -6,18 +9,26 @@ namespace StudentTeacher.Mvc
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Store security keys in a persistent folder when MVC runs in Docker.
+            //ASP.NET Core uses security keys to protect session cookies and antiforgery tokens.
+            // DockerLocal checks whether we're using our Docker configuration.
+            //PersistKeysToFileSystem tells ASP.NET Core to save those keys in / app / keys instead of keeping them only in memory.
+            //Your normal Visual Studio HTTPS configuration remains unchanged.
+            if (builder.Configuration.GetValue<bool>("DockerLocal"))
+            {
+                builder.Services.AddDataProtection()
+                    .SetApplicationName("StudentTeacher.Mvc.Docker")
+                    .PersistKeysToFileSystem(
+                        new DirectoryInfo("/app/keys"));
+            }
+
             // Add services to the container.
             builder.Services.AddControllersWithViews();
 
-            // Configure an HTTP client for communication with the Part 2 API.
-            // Cookies will be managed explicitly through MVC session.
-            // Configure an HTTP client for communication with the Part 2 API.
-            // Cookies will be managed explicitly through MVC session.
+            // Configure an HTTP client for communication with the  API.
+            // Cookies will be managed explicitly through MVC session
             builder.Services.AddHttpClient("StudentTeacherApi", client =>
             {
-                // Registers a named HTTP client specifically for communicating
-                // with your API.
-
                 // Read the API address from configuration.
                 // Locally, this comes from appsettings.json.
                 // Docker can override it using an environment variable.
@@ -62,7 +73,6 @@ namespace StudentTeacher.Mvc
             {
                 app.UseHttpsRedirection();
             }
-
             app.UseRouting();
             app.UseSession();
 
