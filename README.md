@@ -1,103 +1,53 @@
-# StudentTeacher API
+# StudentTeacher Final
 
-This is a PROG6212 teaching example showing how a Part 1 database design can be implemented as a Part 2 ASP.NET Core Web API. This is not the RaceDay POE solution; you must apply the same techniques to your own RaceDay requirements.
+This is the completed StudentTeacher example. You can compare it with **StudentTeacher Practical** to see how we added MVC pages, API calls, login, course management and image uploads.
 
+It is a **reference for learning**, not a RaceDay POE solution. Use it to understand the techniques, then apply them to your own project.
 
+## Run the project in Visual Studio
 
-#### What the system does
+You need Visual Studio with .NET 10, SQL Server and Azurite for image uploads.
 
-The system supports two roles: Teacher and Student. Users can register, log in, log out and view/update their profiles. Teachers manage courses and related information, while students can browse and enrol in courses. The API also manages course categories, enrolment statuses and course results. Authorization restricts certain actions by role.
+1. Open `StudentTeacher_Final.slnx`.
+2. Check `part2/Authentication_API/appsettings.json` and change the SQL Server connection if needed.
+3. Apply the existing EF Core migrations from the main folder:
 
-### 
+```powershell
+dotnet ef database update --project .\part2\Authentication_API\Authentication_API.csproj --startup-project .\part2\Authentication_API\Authentication_API.csproj
+```
 
-#### Technologies
+4. `appsettings.Development.json`. It contains the local **Azurite** settings used for image uploads. Start Azurite before testing uploads. Storage Explorer can be used to view the uploaded images. Image uploads: The API is configured to use Azurite for local image storage. Make sure Azurite is running before uploading profile or course pictures. You can use Microsoft Azure Storage Explorer to view the uploaded images.
+5. Start `Authentication_API` using its HTTPS launch profile. Its API should run at `https://localhost:7261` and also listen on `http://localhost:5279`.
+6. Start `StudentTeacher.Mvc` using its HTTPS profile. Open `https://localhost:7094`.
+7. Register a Teacher or Student account and try the relevant features. A fresh database won't contain the accounts from someone else's computer.
 
-* C# / ASP.NET Core Web API (.NET 10)
-* Entity Framework Core (Code First) with SQL Server Express
-* Cookie authentication and ASP.NET Core Identity password hashing
-* Swagger/OpenAPI for manual endpoint testing
-* xUnit unit tests
-* GitHub Actions (repository currently includes a documentation check workflow; add a separate build-and-test workflow if required)
+## Run MVC using Docker
 
-## 
+Start Docker Desktop and keep the API, SQL Server and Azurite running on Windows. From the **main project folder**, build the MVC image:
 
-#### Requirements before running
+```powershell
+docker build -t studentteachermvc:latest -f part3/StudentTeacher.Mvc/Dockerfile part3/StudentTeacher.Mvc
+```
 
-1. Visual Studio with ASP.NET and web development workload, or a compatible editor and .NET 10 SDK.
-2. SQL Server Express (or another accessible SQL Server instance).
-3. SQL Server Management Studio (SSMS), for inspecting the database.
+Then run the MVC container with this command:
 
-## 
+```powershell
+docker run -d --name studentteacher-final-mvc -p 8081:8080 -e DockerLocal=true -e ApiSettings__BaseUrl=http://host.docker.internal:5279/ -v studentteacher_final_keys:/app/keys studentteachermvc:latest
+```
 
-### Set up the project
+Open `http://localhost:8081`. You should be able to register, log in and use the website as you would in Visual Studio. The API still runs on Windows; **only MVC is inside Docker** in this example. The Docker volume saves MVC's security keys when the container is recreated.
 
-1. Clone or download this repository.
-2. Open part2/Authentication\_API.slnx in Visual Studio.
-3. Ensure Authentication\_API is the startup project.
-4. Open part2/Authentication\_API/appsettings.json and update the DefaultConnection connection string for your SQL Server instance. The example uses localhost\\SQLEXPRESS and StudentTeacherMigrationTest; your server or database name may differ.
-5. Build the solution so NuGet dependencies are restored.
-6. In Visual Studio, open Tools > NuGet Package Manager > Package Manager Console. Select the Authentication\_API project as the default project and run:
+If port 8081 is being used, change the **first** port in `-p 8081:8080` to an unused port. To stop or remove the container:
 
+```powershell
+docker stop studentteacher-final-mvc
+docker rm studentteacher-final-mvc
+```
 
+Build the image again and create a new container after making changes to the MVC code. If the website opens but login fails, check that the API is running on port 5279 and check the Docker container logs.
 
-&#x09;Update-Database
+## Remember for the POE
 
+Your RaceDay Part 3 submission needs its **own** working MVC application, Dockerfile and `docker run` command in the README. Test the full website in Docker, not just the home page. Your README should also explain your own setup and include the documentation, references and AI-use links required by the POE instructions.
 
-
-This applies the existing EF Core migration to the database named in the connection string. Do not create another initial migration when the repository already includes one. Do not execute the Part 1 CREATE TABLE script against the same database before applying migrations.
-
-7. Open SSMS and verify the database contains Users, Student\_Profiles, Teacher\_Profiles, Course\_Categories, Courses, Enrolments, Course\_Results and \_\_EFMigrationsHistory.
-8. Run the API using Visual Studio. In the development environment, open the Swagger page (usually /swagger). Use the actual localhost URL displayed by Visual Studio.
-9. Register a new Teacher or Student account through POST /api/auth/register, then log in using POST /api/auth/login. Keep the login cookie for subsequent authorized requests in the same Swagger/browser session.
-10. Try course/category/enrolment/results endpoints according to the user's role.
-
-Important: Applying migrations creates the schema, not the sample records from a different local database. Register users and create any necessary categories/courses through the API. Password hashes copied from another database are not required for initial setup.
-
-
-
-### API areas
-
-Auth: Register, login, logout, view and update profile  
-
-Categories: View and manage course categories 
-
-Courses: List, view, create, update and delete courses; teacher's courses 
-
-Enrolments: Enrol, view enrolments, change status and cancel/remove enrolments 
-
-Results: Record, view and update course results 
-
-Reacher/ Student: role-based authorization demonstrations 
-
-DashBoard: Authentication-only 
-
-Some controllers are demonstrations and not essential RaceDay features. See controller attributes and methods for the exact routes and permitted roles.
-
-### 
-
-### Running tests
-
-In Visual Studio choose Test > Run All Tests. Or you can choose one and run
-
-
-
-The repository includes xUnit tests. Passing tests do not replace manual checks that unauthenticated users receive 401 and users with the wrong role receive 403 where applicable.
-
-
-
-### Part 1 to Part 2 learning path
-
-1. Start with the ERD, SQL script and API endpoint plan in docs/.
-2. Map each ERD entity to a C# model and its relationships.
-3. Configure the schema in AppDbContext with DbSet<> and OnModelCreating.
-4. Inspect the initial migration and apply it with Update-Database.
-5. Configure SQL Server, cookie authentication and authorization in Program.cs.
-6. Implement and test controller endpoints with Swagger.
-7. Write and run unit tests; configure CI to build and test.
-
-
-
-## Note
-
-This example teaches the development process, not a ready-made submission. RaceDay uses Organiser/Participant, events, categories, enrolments and results. Refer to the official POE, memo and rubric for the exact RaceDay functionality, security requirements, tests and submission rules. Document your own design decisions.
-
+Docker Compose is covered separately in Learning Unit 6. It is not required by the Part 3 Docker marking section.
